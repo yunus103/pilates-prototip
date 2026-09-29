@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Sales demo using the studio's real brand before approval: keep it out of search engines. -->
+<meta name="robots" content="noindex, nofollow">
+<title>SVD Pilates Stüdyo · Fikirtepe</title>
+<meta name="description" content="Fikirtepe'de reformer, cadillac ve chair ile grup, bireysel ve double pilates. Her gün 08:00–22:00.">
+<meta name="theme-color" content="#EBD6C8">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:title" content="SVD Pilates Stüdyo · Fikirtepe">
+<meta property="og:description" content="Güçlen. Sıkılaş. Doğru hareket et. Dersini bul, saatini seç, WhatsApp'tan ayırt.">
+<!-- WhatsApp needs an absolute URL here: replace with the deployed https:// address. -->
+<meta property="og:image" content="assets/studio.jpg">
+<link rel="icon" href="assets/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<script src="config.js" defer></script>
+<script src="reformer.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/logo.jpg" alt="SVD Pilates Stüdyo logosu" width="44" height="44"><b>SVD</b></a>
+    <nav aria-label="Bölümler"><a href="#studyo">Stüdyo</a><a href="#ekip" hidden>Ekip</a><a href="#ders">Sana uygun ders</a><a href="#yorumlar">Yorumlar</a><a class="cta js-wa" href="#" target="_blank" rel="noopener">Ders ayırt</a></nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="scene" id="scene" aria-label="Reformer">
+    <div class="stage" id="stage" data-beat="0">
+      <canvas id="reformer" aria-label="Sürüklenebilir 3D reformer aleti"></canvas>
+
+      <div class="beat" data-beat="0">
+        <h1>Güçlen. Sıkılaş. Doğru hareket et.</h1>
+        <p>Fikirtepe'de, Sevda Hoca ve ekibiyle reformer, cadillac ve chair üzerinde grup, bireysel ve double pilates.</p>
+        <div class="row">
+          <a class="btn btn-dark js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
+          <a class="btn btn-line" href="#ders">Sana uygun dersi bul</a>
+        </div>
+      </div>
+      <div class="beat off" data-beat="1" aria-hidden="true">
+        <h2>Her yay, farklı bir direnç.</h2>
+        <p>Kırmızı en ağır, sarı en hafif. Yayları aşağıdan değiştir, taşıyıcıyı çek ve farkı hisset. Derste bu ayarı eğitmenin senin için yapar.</p>
+      </div>
+      <div class="beat off" data-beat="2" aria-hidden="true">
+        <h2>Az tekrar, doğru tekrar.</h2>
+        <p>Küçük gruplarda ve birebir derslerde her hareket kontrol altında. Acele yok, ezber yok.</p>
+        <div class="row"><a class="btn btn-copper" href="#ders">Dersini ve saatini seç</a></div>
+      </div>
+
+      <p class="hint" id="hint"><i></i>Taşıyıcıyı sola çek</p>
+
+      <div class="panel" id="panel">
+        <div class="panel-top"><b id="level">Orta direnç</b><span class="breath" id="breath"></span></div>
+        <div class="meter"><i id="meter"></i></div>
+        <div class="springs" id="springs"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="photo" id="studyo">
+    <img src="assets/studio.jpg" alt="SVD Pilates stüdyosunda sıralanmış ahşap reformerlar ve kemerli aynalar" id="photo-img">
+    <div class="wrap">
+      <h2>Aynı reformerlar, gerçek hâliyle.</h2>
+      <p>Evinpark Çarşı'da ferah, aydınlık bir stüdyo. Kemerli aynalar, ahşap aletler ve her gün 08:00'den 22:00'ye açık kapılar.</p>
+    </div>
+  </section>
+
+  <section class="section team" id="ekip" hidden>
+    <div class="wrap">
+      <div class="title">
+        <h2>Sevda Hoca ve ekibi.</h2>
+        <p>Yayını, tekrarını ve temponu sana göre ayarlayan eğitmenler.</p>
+      </div>
+      <div class="team-grid" id="team"></div>
+    </div>
+  </section>
+
+  <section class="section" id="ders">
+    <div class="wrap">
+      <div class="title">
+        <h2>Önce dersini bul, sonra saatini seç.</h2>
+        <p>Üç soruda sana uygun formatı öneriyoruz. Saatini seçtiğinde rezervasyon mesajın WhatsApp'ta hazır açılır.</p>
+      </div>
+      <div class="duo">
+        <div class="card quiz" id="quiz" aria-live="polite"></div>
+        <div class="card book" id="booking">
+          <label class="field"><b>Adın <span>(isteğe bağlı)</span></b><input class="input" id="f-name" type="text" autocomplete="given-name" placeholder="Örn. Ayşe" maxlength="40"></label>
+          <div class="field"><b>Format</b><div class="chips" id="f-format"></div></div>
+          <div class="field"><b>Gün</b><div class="chips scroll" id="f-day"></div></div>
+          <div class="field"><b>Saat</b><div class="times" id="f-time"></div></div>
+          <p class="summary" id="summary" aria-live="polite"></p>
+          <a class="btn btn-dark" id="book-btn" href="#" target="_blank" rel="noopener">WhatsApp'tan ayırt</a>
+          <p class="fine">Uygunluğu stüdyo WhatsApp'tan teyit eder.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section voice" id="yorumlar">
+    <div class="wrap">
+      <span class="stars" aria-label="Google'da 5 yıldız">★★★★★</span>
+      <div class="quote"><p id="q-text"></p></div>
+      <p class="who" id="q-who"></p>
+      <div class="qnav">
+        <button class="arrow" type="button" id="q-prev" aria-label="Önceki yorum">←</button>
+        <div class="qdots" id="q-dots"></div>
+        <button class="arrow" type="button" id="q-next" aria-label="Sonraki yorum">→</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section contact" id="iletisim">
+    <div class="wrap">
+      <div class="contact-main">
+        <h2>İlk adım bir mesaj.</h2>
+        <p class="lead">Yaz, sana uygun saati ve formatı birlikte belirleyelim. Rahat bir kıyafet ve kaymaz çorap yeterli.</p>
+        <div class="row">
+          <a class="btn btn-light js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
+          <a class="btn btn-line" id="maps-link" href="#" target="_blank" rel="noopener">Yol tarifi al</a>
+        </div>
+      </div>
+      <dl class="info" id="info"></dl>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© <span id="year"></span> SVD Pilates Stüdyo</span>
+    <span>Tasarım: <a href="https://yaytechstudio.com" target="_blank" rel="noopener">YayTech Studio</a></span>
+  </div>
+</footer>
+
+<div class="mbar" aria-label="Hızlı iletişim">
+  <a class="btn btn-line" id="call-link" href="#">Ara</a>
+  <a class="btn btn-copper js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
+</div>
+
+</body>
+</html>
