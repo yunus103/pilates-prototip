@@ -92,6 +92,45 @@ function contactShadow() {
   return m;
 }
 
+// Morning sun through a 3×2 window: a soft light decal on the floor plus invisible mullion bars
+// that cast matching shadow lines across the reformer. A horizontal grid's shadow on a horizontal floor
+// is the same grid shifted along the light, so lifting the bars by -d·t keeps both aligned.
+function windowLight(sunPos, floorY) {
+  const d = sunPos.clone().normalize().negate();
+  const U = new THREE.Vector3(1, 0, 0), V = new THREE.Vector3(d.x, 0, d.z).normalize();
+  const basis = new THREE.Matrix4().makeBasis(U, V, new THREE.Vector3(0, 1, 0));   // skews panes like real window light
+  const cols = 3, rows = 2, pw = 0.6, ph = 1.05, bar = 0.07, M = 0.3, PX = 160;
+  const W = cols * pw + (cols - 1) * bar, H = rows * ph + (rows - 1) * bar;
+  const tex = canvasTexture(Math.round((W + 2 * M) * PX), Math.round((H + 2 * M) * PX), (g, w) => {
+    g.shadowColor = "rgba(255, 247, 235, .95)";
+    g.shadowBlur = 22;
+    g.shadowOffsetX = w;                       // panes are drawn off-canvas; only their blurred shadow lands on it
+    for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) g.fillRect((M + c * (pw + bar)) * PX - w, (M + r * (ph + bar)) * PX, pw * PX, ph * PX);
+  });
+  tex.encoding = THREE.sRGBEncoding;
+  const decal = new THREE.Mesh(
+    new THREE.PlaneGeometry(W + 2 * M, H + 2 * M).applyMatrix4(basis),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, depthWrite: false, toneMapped: false, side: THREE.DoubleSide })
+  );
+  decal.position.y = floorY + 0.001;
+
+  const hidden = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const bars = new THREE.Group();
+  const addBar = (w, h, x, y) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02).translate(x, y, 0).applyMatrix4(basis), hidden);
+    m.castShadow = true;
+    bars.add(m);
+  };
+  for (let c = 1; c < cols; c++) addBar(bar, H, -W / 2 + c * (pw + bar) - bar / 2, 0);
+  for (let r = 1; r < rows; r++) addBar(W, bar, 0, -H / 2 + r * (ph + bar) - bar / 2);
+  const lift = 2.1, t = (lift - floorY) / -d.y;
+  bars.position.set(-d.x * t, lift, -d.z * t);
+
+  const gobo = new THREE.Group();
+  gobo.add(decal, bars);
+  return gobo;
+}
+
 // Dashed rectangle just above the pad top: reads as upholstery stitching.
 function stitch(w, d, y, inset) {
   const x = w / 2 - inset, z = d / 2 - inset;
@@ -108,7 +147,7 @@ function buildReformer(scene) {
   const grain = woodTexture();
   const wood = new THREE.MeshStandardMaterial({ map: grain, roughness: 0.55 });
   const woodDark = new THREE.MeshStandardMaterial({ map: grain, color: lin("#D8BC98"), roughness: 0.6 });
-  const pad = mat("#D9CEC2", 0.92), rubber = mat("#2B2320", 0.85), steel = mat("#D4D1CC", 0.3, 0.9), strap = mat("#26201D", 0.75);
+  const pad = mat("#CBB5A4", 0.92), rubber = mat("#2B2320", 0.85), steel = mat("#D4D1CC", 0.3, 0.9), strap = mat("#26201D", 0.75);
   const add = (parent, geo, material, x, y, z, shadow = true) => {
     const m = new THREE.Mesh(geo, material);
     m.position.set(x, y, z);
@@ -199,19 +238,21 @@ function buildReformer(scene) {
 }
 
 /* ---------- scene, camera, interaction ---------- */
-// Camera stops; scroll blends between them. wide/narrow are view offsets (fraction of the viewport)
-// that push the reformer away from the beat text: right on desktop, down on phones.
+// Camera stops; scroll blends between them. wideY = desktop vertical view offset (fraction of the viewport);
+// horizontal placement and distance are measured from the layout in fitWide() / fitNarrow().
 const SHOTS = [
-  { pos: [2.35, 1.75, 3.3], look: [0.05, 0.35, 0], wide: [-0.14, 0.05], narrow: [0, -0.2] },
-  { pos: [1.85, 0.85, 1.25], look: [0.72, 0.38, 0], wide: [-0.16, 0.02], narrow: [0, -0.04] },
-  { pos: [-0.2, 3.9, 1.1], look: [0.0, 0.3, 0], wide: [-0.14, 0.03], narrow: [0, -0.17] }
+  { pos: [2.35, 1.75, 3.3], look: [0.05, 0.35, 0], wideY: 0.05 },
+  { pos: [1.85, 0.85, 1.25], look: [0.72, 0.38, 0], wideY: 0.02 },
+  { pos: [-0.2, 3.9, 1.1], look: [0.0, 0.3, 0], wideY: 0.03 }
 ];
+const FLOOR_Y = -0.05, GOBO_X = 0.3, GOBO_Z = 0.25;
 
 function initReformer() {
-  const canvas = $("#reformer");
+  const canvas = $("#reformer"), stage = $("#stage"), scene3 = $("#scene"), panel = $("#panel"), hint = $("#hint"), breath = $("#breath"), mbar = $(".mbar");
+  const beats = [...document.querySelectorAll(".beat")];
   let renderer = null;
   if (window.THREE) { try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" }); } catch { renderer = null; } }
-  if (!renderer) { $("#panel").hidden = true; $("#hint").hidden = true; return; }
+  if (!renderer) { panel.hidden = true; hint.hidden = true; return; }
   const coarse = matchMedia("(pointer: coarse)").matches;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -234,31 +275,24 @@ function initReformer() {
   const fill = new THREE.DirectionalLight(lin("#FFE7DA"), 0.4);
   fill.position.set(-3, 2, -2);
   scene.add(fill);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ opacity: 0.18 }));
-  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.05; floor.receiveShadow = true;
-  scene.add(floor);
+  // Floor layers, bottom to top: window light, contact shadow, real shadows.
+  const gobo = windowLight(sun.position, FLOOR_Y);
+  gobo.position.set(GOBO_X, 0, GOBO_Z);
+  scene.add(gobo);
   const blob = contactShadow();
-  blob.position.y = -0.048;
+  blob.position.y = FLOOR_Y + 0.002;
+  blob.renderOrder = 1;
   scene.add(blob);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = FLOOR_Y; floor.receiveShadow = true;
+  floor.renderOrder = 2;
+  scene.add(floor);
 
   const pose = buildReformer(scene);
 
-  let vw = 1, vh = 1, wideLayout = true, dist = 1, dirty = true;
-  const resize = () => {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (!w || !h) return;
-    vw = w; vh = h;
-    renderer.setSize(vw, vh, false);
-    camera.aspect = vw / vh;
-    wideLayout = vw > 900;
-    dist = clamp(1.5 / camera.aspect, 1, 2.7);   // pull back on portrait screens so the whole frame fits
-    dirty = true;
-  };
-  new ResizeObserver(resize).observe(canvas);
-  resize();
-
   // Physics
   let x = 0, v = 0, dragging = false, dragStartX = 0, dragStartDisp = 0, lastMove = 0, touched = false, lastT = performance.now();
+  let dirty = true;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   canvas.addEventListener("pointerdown", e => {
@@ -270,7 +304,7 @@ function initReformer() {
   canvas.addEventListener("pointermove", e => {
     if (!dragging) return;
     // Only a real horizontal pull stops the autoplay; a touch that turns into a scroll does not.
-    if (!touched) { touched = true; $("#hint").classList.add("gone"); }
+    if (!touched) { touched = true; hint.classList.add("gone"); }
     const now = performance.now();
     const give = 3.2 / (1.4 + totalK() * 0.35);                    // heavier springs: same pull, less travel
     const next = clamp(dragStartDisp + ((dragStartX - e.clientX) / canvas.clientWidth) * give, 0, TRAVEL);
@@ -283,21 +317,60 @@ function initReformer() {
 
   renderSpringControls(() => { touched = true; dirty = true; });
 
-  const scene3 = $("#scene"), stage = $("#stage"), beats = [...document.querySelectorAll(".beat")], breath = $("#breath");
+  // Framing per shot: view offset (fraction of the viewport) and a camera-distance multiplier.
+  let vw = 1, vh = 1, dist = 1, frames = [];
+  // Phones: centre the reformer in the free band between the beat text and the spring panel (or bottom bar),
+  // pulling the camera back when the band is short and closer when it is tall.
+  function fitNarrow() {
+    const panelTop = panel.offsetTop, barTop = vh - mbar.offsetHeight;
+    stage.style.setProperty("--dock", `${vh - panelTop + 10}px`);
+    return beats.map((el, i) => {
+      const top = el.offsetTop + el.offsetHeight + 16;
+      const bottom = (i < 2 ? panelTop - (i === 0 ? 36 : 0) : barTop) - 16;   // beat 0 also keeps room for the hint
+      const band = Math.max(bottom - top, 100);
+      const zoom = i === 1 ? 1 : clamp((vw * 0.6) / band, 0.85, 1.9);        // model is ~0.6·vw tall at zoom 1
+      return { ox: 0, oy: (vh / 2 - (top + bottom) / 2) / vh, zoom };
+    });
+  }
+  // Desktop: same idea sideways. Centre the reformer between the beat text's right edge and the right gutter,
+  // pulling back when that band is narrower than the model (large headlines, ~1000px windows).
+  function fitWide() {
+    const right = vw - beats[0].offsetLeft;
+    const modelW = (1.04 / (camera.aspect * dist)) * vw;   // on-screen width of the model at zoom 1 (shot 0)
+    return SHOTS.map((s, i) => {
+      const left = beats[i].offsetLeft + beats[i].offsetWidth + 32;
+      const band = Math.max(right - left, 240);
+      const zoom = i === 1 ? 1 : clamp(modelW / (band * 0.94), 0.9, 1.8);
+      return { ox: (vw / 2 - (left + right) / 2) / vw, oy: s.wideY, zoom };
+    });
+  }
+  const resize = () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    vw = w; vh = h;
+    renderer.setSize(vw, vh, false);
+    camera.aspect = vw / vh;
+    dist = clamp(1.5 / camera.aspect, 1, 2.7);   // pull back on portrait screens so the whole frame fits
+    frames = vw > 900 ? fitWide() : fitNarrow();
+    dirty = true;
+  };
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+  document.fonts.ready.then(resize);             // beat heights change once Marcellus arrives
+
   let beatNow = 0;
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
-
   function placeCamera(p) {
     const t = clamp(p / 0.8, 0, 1) * (SHOTS.length - 1);
     const i = Math.min(SHOTS.length - 2, Math.floor(t));
     const f = smooth(t - i);
-    const A = SHOTS[i], B = SHOTS[i + 1];
+    const mix = (from, to) => from + (to - from) * f;
+    const A = SHOTS[i], B = SHOTS[i + 1], FA = frames[i], FB = frames[i + 1];
     camLook.copy(a.fromArray(A.look)).lerp(b.fromArray(B.look), f);
-    camPos.copy(a.fromArray(A.pos)).lerp(b.fromArray(B.pos), f).sub(camLook).multiplyScalar(dist).add(camLook);
+    camPos.copy(a.fromArray(A.pos)).lerp(b.fromArray(B.pos), f).sub(camLook).multiplyScalar(dist * mix(FA.zoom, FB.zoom)).add(camLook);
     camera.position.copy(camPos);
     camera.lookAt(camLook);
-    const oA = wideLayout ? A.wide : A.narrow, oB = wideLayout ? B.wide : B.narrow;
-    camera.setViewOffset(vw, vh, (oA[0] + (oB[0] - oA[0]) * f) * vw, (oA[1] + (oB[1] - oA[1]) * f) * vh, vw, vh);
+    camera.setViewOffset(vw, vh, mix(FA.ox, FB.ox) * vw, mix(FA.oy, FB.oy) * vh, vw, vh);
   }
   function showBeat(p) {
     const idx = p < 0.3 ? 0 : p < 0.64 ? 1 : 2;
@@ -336,6 +409,7 @@ function initReformer() {
     // Skip the GPU work when nothing moved: carriage at rest, no scroll, no spring change.
     if (dirty || Math.abs(x - drawnX) > 1e-5 || p !== drawnP) {
       pose(x);
+      gobo.position.x = GOBO_X - p * 0.35;       // the window light drifts as the camera orbits
       placeCamera(p);
       renderer.render(scene, camera);
       drawnX = x; drawnP = p; dirty = false;

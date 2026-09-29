@@ -11,9 +11,12 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="tr_TR">
 <meta property="og:title" content="SVD Pilates Stüdyo · Fikirtepe">
-<meta property="og:description" content="Güçlen. Sıkılaş. Doğru hareket et. Dersini bul, saatini seç, WhatsApp'tan ayırt.">
-<!-- WhatsApp needs an absolute URL here: replace with the deployed https:// address. -->
-<meta property="og:image" content="assets/studio.jpg">
+<meta property="og:description" content="Güçlen. Sıkılaş. Doğru hareket et. Fikirtepe'de reformer, cadillac ve chair ile butik pilates.">
+<!-- WhatsApp needs absolute URLs here. -->
+<meta property="og:url" content="https://svd-pilates-studio.vercel.app/">
+<meta property="og:image" content="https://svd-pilates-studio.vercel.app/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <link rel="icon" href="assets/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,9 +32,23 @@
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top"><img src="assets/logo.jpg" alt="SVD Pilates Stüdyo logosu" width="44" height="44"><b>SVD</b></a>
-    <nav aria-label="Bölümler"><a href="#studyo">Stüdyo</a><a href="#ekip" hidden>Ekip</a><a href="#ders">Sana uygun ders</a><a href="#yorumlar">Yorumlar</a><a class="cta js-wa" href="#" target="_blank" rel="noopener">Ders ayırt</a></nav>
+    <nav aria-label="Bölümler"><a href="#studyo">Stüdyo</a><a href="#ekip" hidden>Ekip</a><a href="#ders">Sana uygun ders</a><a href="#yorumlar">Yorumlar</a><a class="cta js-wa" href="#" target="_blank" rel="noopener">Rezervasyon</a></nav>
+    <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="menu" aria-label="Menüyü aç"><i></i><i></i></button>
   </div>
 </header>
+
+<div class="menu" id="menu" aria-label="Menü">
+  <nav class="menu-links">
+    <a href="#studyo">Stüdyo</a><a href="#ekip" hidden>Ekip</a><a href="#ders">Sana uygun ders</a><a href="#yorumlar">Yorumlar</a><a href="#iletisim">İletişim</a>
+  </nav>
+  <div class="menu-foot">
+    <p id="menu-info"></p>
+    <div class="row">
+      <a class="btn btn-line menu-call" href="#">Ara</a>
+      <a class="btn btn-light js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan mesaj</a>
+    </div>
+  </div>
+</div>
 
 <main id="top">
   <section class="scene" id="scene" aria-label="Reformer">
@@ -41,19 +58,16 @@
       <div class="beat" data-beat="0">
         <h1>Güçlen. Sıkılaş. Doğru hareket et.</h1>
         <p>Fikirtepe'de, Sevda Hoca ve ekibiyle reformer, cadillac ve chair üzerinde grup, bireysel ve double pilates.</p>
-        <div class="row">
-          <a class="btn btn-dark js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
-          <a class="btn btn-line" href="#ders">Sana uygun dersi bul</a>
-        </div>
+        <div class="row"><a class="btn btn-dark" href="#ders">Sana uygun ders hangisi?</a></div>
       </div>
       <div class="beat off" data-beat="1" aria-hidden="true">
         <h2>Her yay, farklı bir direnç.</h2>
-        <p>Kırmızı en ağır, sarı en hafif. Yayları aşağıdan değiştir, taşıyıcıyı çek ve farkı hisset. Derste bu ayarı eğitmenin senin için yapar.</p>
+        <p>Kırmızı en ağır, sarı en hafif. Aşağıdaki yaylarla direnci değiştirip taşıyıcıyı çektiğinde fark hemen hissediliyor. Derste bu ayarı eğitmenin yapar.</p>
       </div>
       <div class="beat off" data-beat="2" aria-hidden="true">
         <h2>Az tekrar, doğru tekrar.</h2>
         <p>Küçük gruplarda ve birebir derslerde her hareket kontrol altında. Acele yok, ezber yok.</p>
-        <div class="row"><a class="btn btn-copper" href="#ders">Dersini ve saatini seç</a></div>
+        <div class="row"><a class="btn btn-copper" href="#ders">Ders ve saat seçimi</a></div>
       </div>
 
       <p class="hint" id="hint"><i></i>Taşıyıcıyı sola çek</p>
@@ -67,7 +81,10 @@
   </section>
 
   <section class="photo" id="studyo">
-    <img src="assets/studio.jpg" alt="SVD Pilates stüdyosunda sıralanmış ahşap reformerlar ve kemerli aynalar" id="photo-img">
+    <picture>
+      <source media="(max-width: 700px)" srcset="assets/studio.jpg">
+      <img src="assets/studio.webp" alt="SVD Pilates stüdyosunda sıralanmış ahşap reformerlar ve kemerli aynalar" id="photo-img" width="1774" height="887">
+    </picture>
     <div class="wrap">
       <h2>Aynı reformerlar, gerçek hâliyle.</h2>
       <p>Evinpark Çarşı'da ferah, aydınlık bir stüdyo. Kemerli aynalar, ahşap aletler ve her gün 08:00'den 22:00'ye açık kapılar.</p>
@@ -87,8 +104,8 @@
   <section class="section" id="ders">
     <div class="wrap">
       <div class="title">
-        <h2>Önce dersini bul, sonra saatini seç.</h2>
-        <p>Üç soruda sana uygun formatı öneriyoruz. Saatini seçtiğinde rezervasyon mesajın WhatsApp'ta hazır açılır.</p>
+        <h2>Sana uygun ders, sana uygun saat.</h2>
+        <p>Birkaç kısa soruda sana özel bir başlangıç planı çıkarıyoruz. Saat seçildiğinde rezervasyon mesajı WhatsApp'ta hazır açılır.</p>
       </div>
       <div class="duo">
         <div class="card quiz" id="quiz" aria-live="polite"></div>
@@ -121,11 +138,11 @@
   <section class="section contact" id="iletisim">
     <div class="wrap">
       <div class="contact-main">
-        <h2>İlk adım bir mesaj.</h2>
-        <p class="lead">Yaz, sana uygun saati ve formatı birlikte belirleyelim. Rahat bir kıyafet ve kaymaz çorap yeterli.</p>
+        <h2>Stüdyoda tanışalım.</h2>
+        <p class="lead">Uygun saati ve formatı WhatsApp'tan birlikte belirleyebiliriz. İlk ders için rahat bir kıyafet ve kaymaz çorap yeterli.</p>
         <div class="row">
-          <a class="btn btn-light js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
-          <a class="btn btn-line" id="maps-link" href="#" target="_blank" rel="noopener">Yol tarifi al</a>
+          <a class="btn btn-light js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan mesaj</a>
+          <a class="btn btn-line" id="maps-link" href="#" target="_blank" rel="noopener">Yol tarifi</a>
         </div>
       </div>
       <dl class="info" id="info"></dl>
@@ -142,7 +159,7 @@
 
 <div class="mbar" aria-label="Hızlı iletişim">
   <a class="btn btn-line" id="call-link" href="#">Ara</a>
-  <a class="btn btn-copper js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan yaz</a>
+  <a class="btn btn-copper js-wa" href="#" target="_blank" rel="noopener">WhatsApp'tan mesaj</a>
 </div>
 
 </body>

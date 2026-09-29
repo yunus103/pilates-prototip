@@ -3,25 +3,43 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const waLink = text => `https://wa.me/${STUDIO.whatsapp}?text=${encodeURIComponent(text)}`;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smooth = t => t * t * (3 - 2 * t);
+const hh = h => `${String(h).padStart(2, "0")}:00`;
 const DAY_NAMES = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const MEMBER_COLORS = ["#C8453C", "#4E9660", "#3D6DB3", "#DDAE36"];
+const HOURS_TEXT = `${hh(STUDIO.open)} – ${hh(STUDIO.close)}`;
 
 function bindBasics() {
   const msg = `Merhaba, ${STUDIO.name} hakkında bilgi almak ve ders ayırtmak istiyorum.`;
   document.querySelectorAll(".js-wa").forEach(a => { a.href = waLink(msg); });
-  $("#call-link").href = `tel:+${STUDIO.whatsapp}`;
+  document.querySelectorAll("#call-link, .menu-call").forEach(a => { a.href = `tel:+${STUDIO.whatsapp}`; });
   $("#maps-link").href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(STUDIO.mapsQuery)}`;
   $("#year").textContent = new Date().getFullYear();
   $("#info").innerHTML = `
     <div><dt>Adres</dt><dd>${esc(STUDIO.address)}</dd></div>
-    <div><dt>Saatler</dt><dd>Her gün ${String(STUDIO.open).padStart(2, "0")}:00 – ${STUDIO.close}:00</dd></div>
+    <div><dt>Saatler</dt><dd>Her gün ${HOURS_TEXT}</dd></div>
     <div><dt>Telefon ve WhatsApp</dt><dd><span class="phone" id="phone-text">${esc(STUDIO.phone)}</span><button class="copy" type="button" id="copy-phone">Kopyala</button></dd></div>
     <div><dt>Instagram</dt><dd><a href="https://instagram.com/${esc(STUDIO.instagram)}" target="_blank" rel="noopener">@${esc(STUDIO.instagram)}</a></dd></div>`;
   $("#copy-phone").addEventListener("click", async e => {
     try { await navigator.clipboard.writeText(STUDIO.phone); e.target.textContent = "Kopyalandı"; }
     catch { const r = document.createRange(); r.selectNodeContents($("#phone-text")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
   });
+}
+
+/* ================= MOBİL MENÜ ================= */
+function initMenu() {
+  const btn = $("#menu-btn"), menu = $("#menu");
+  const isOpen = () => document.body.classList.contains("menu-open");
+  const set = open => {
+    document.body.classList.toggle("menu-open", open);
+    btn.setAttribute("aria-expanded", open);
+    btn.setAttribute("aria-label", open ? "Menüyü kapat" : "Menüyü aç");
+    if (open) menu.querySelector("a:not([hidden])").focus();
+  };
+  $("#menu-info").textContent = `${STUDIO.address} · Her gün ${HOURS_TEXT}`;
+  btn.addEventListener("click", () => set(!isOpen()));
+  menu.addEventListener("click", e => { if (e.target.closest("a")) set(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) { set(false); btn.focus(); } });
 }
 
 /* ================= FOTOĞRAF PARALLAX ================= */
@@ -42,37 +60,35 @@ function initTeam() {
   if (!members.length) return;
   $("#team").innerHTML = members.map((m, i) => `
     <figure class="member" style="--i:${i};--c:${MEMBER_COLORS[i % MEMBER_COLORS.length]}">
-      <img src="${esc(m.photo)}" alt="${esc(m.name)}" loading="lazy">
-      <figcaption>
-        <svg viewBox="0 0 34 14" aria-hidden="true"><path d="${COIL_PATH}"/></svg>
-        <h3>${esc(m.name)}</h3><span>${esc(m.role)}</span>
-      </figcaption>
+      <div class="ph"><img src="${esc(m.photo)}" alt="${esc(m.name)}" loading="lazy"></div>
+      <figcaption><h3>${esc(m.name)}</h3><span>${esc(m.role)}</span></figcaption>
     </figure>`).join("");
   $("#ekip").hidden = false;
-  $('.nav a[href="#ekip"]').hidden = false;
+  document.querySelectorAll('a[href="#ekip"]').forEach(a => { a.hidden = false; });
 }
 
-/* ================= TEST + SAAT SEÇİCİ ================= */
+/* ================= SAAT SEÇİCİ ================= */
 const booking = (() => {
-  const state = { name: "", format: STUDIO.formats[0], day: 0, time: null };
+  const state = { name: "", format: STUDIO.formats[0], plan: null, day: 0, time: null };
   const dayDate = o => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + o); return d; };
   const dayLabel = o => o === 0 ? "Bugün" : o === 1 ? "Yarın" : DAY_NAMES[dayDate(o).getDay()].slice(0, 3);
   const hoursFor = o => {
     const first = o === 0 ? Math.max(STUDIO.open, new Date().getHours() + 1) : STUDIO.open;
     const list = [];
-    for (let h = first; h < STUDIO.close; h++) list.push(`${String(h).padStart(2, "0")}:00`);
+    for (let h = first; h < STUDIO.close; h++) list.push(hh(h));
     return list;
   };
   if (!hoursFor(0).length) state.day = 1;   // after the last slot, open on tomorrow instead of an empty today
   const whenText = () => { const d = dayDate(state.day); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${DAY_NAMES[d.getDay()]}`; };
   const message = () => {
     const hi = state.name ? `Merhaba, ben ${state.name}.` : "Merhaba,";
+    const lesson = `${state.format} pilates dersi${state.plan ? ` (${state.plan})` : ""}`;
     return state.time
-      ? `${hi} ${whenText()} ${state.time} için ${state.format} pilates dersi ayırtmak istiyorum.`
-      : `${hi} ${whenText()} için ${state.format} pilates dersi ayırtmak istiyorum. Uygun saatleri öğrenebilir miyim?`;
+      ? `${hi} ${whenText()} ${state.time} için ${lesson} ayırtmak istiyorum.`
+      : `${hi} ${whenText()} için ${lesson} ayırtmak istiyorum. Uygun saatleri öğrenebilir miyim?`;
   };
   function renderSummary() {
-    $("#summary").innerHTML = `<b>${esc(state.format)}</b><span>${esc(whenText())}</span><span class="${state.time ? "" : "todo"}">${state.time ? esc(state.time) : "Saat seçilmedi"}</span>`;
+    $("#summary").innerHTML = `<b>${esc(state.format)}</b>${state.plan ? `<span>${esc(state.plan)}</span>` : ""}<span>${esc(whenText())}</span><span class="${state.time ? "" : "todo"}">${state.time ? esc(state.time) : "Saat seçilmedi"}</span>`;
     const btn = $("#book-btn");
     btn.href = waLink(message());
     btn.textContent = state.time ? "WhatsApp'tan ayırt" : "Uygun saatleri sor";
@@ -87,56 +103,127 @@ const booking = (() => {
     if (!hours.includes(state.time)) state.time = null;
     $("#f-time").innerHTML = hours.length
       ? hours.map(h => `<button type="button" class="chip" data-time="${h}" aria-pressed="${h === state.time}">${h}</button>`).join("")
-      : `<p class="fine">Bugün için saat kalmadı, yarını seç.</p>`;
+      : `<p class="fine">Bugün için uygun saat kalmadı.</p>`;
     renderSummary();
+  }
+  // Pre-fills from a quiz plan: its format, and the first open slot inside the preferred time window.
+  function pick(format, plan, [from, to]) {
+    const inWindow = h => { const n = parseInt(h, 10); return n >= from && n < to; };
+    const day = Array.from({ length: 7 }, (_, d) => d).find(d => hoursFor(d).some(inWindow));
+    Object.assign(state, { format, plan }, day === undefined ? {} : { day, time: hoursFor(day).find(inWindow) });
+    render();
   }
   $("#booking").addEventListener("click", e => {
     const b = e.target.closest(".chip");
     if (!b) return;
-    if (b.dataset.format) state.format = b.dataset.format;
+    if (b.dataset.format) { state.format = b.dataset.format; state.plan = null; }
     if (b.dataset.day) state.day = Number(b.dataset.day);
     if (b.dataset.time) state.time = b.dataset.time;
     render();
   });
   $("#f-name").addEventListener("input", e => { state.name = e.target.value.trim(); renderSummary(); });
-  return { render, set(p) { Object.assign(state, p); render(); } };
+  return { render, pick };
 })();
 
-const RESULTS = {
-  hamile: { title: "Hamile pilatesi", format: "Bireysel", text: "Doktor onayıyla, hamileliğinin dönemine uygun, pelvik taban ve nefes odaklı bireysel program." },
-  klinik: { title: "Bel ve boyun programı", format: "Bireysel", text: "Bel fıtığı, boyun ve sırt ağrıları için hareketlerin sana göre seçildiği, birebir ilerleyen dersler." },
-  double: { title: "Double ders", format: "Double", text: "Arkadaşın, eşin ya da annenle birlikte, iki kişiye özel ilgiyle." },
-  grup: { title: "Grup reformer", format: "Grup", text: "Küçük grupta, enerjisi yüksek ve motive edici dersler. Düzenli ilerlemenin en keyifli yolu." },
-  bireysel: { title: "Bireysel ders", format: "Bireysel", text: "Tamamen sana özel program ve saat. Eğitmenin sadece seninle ilgilenir." }
-};
+/* ================= ÖNERİ MOTORU ================= */
+// One tap per question; the plan is derived from all answers and pre-fills the time picker.
 const QUESTIONS = [
-  { q: "Şu an hamile misin ya da yakın zamanda doğum yaptın mı?", a: [["Evet", "hamile"], ["Hayır", null]] },
-  { q: "Bel fıtığı, boyun ya da sırt ağrın var mı?", a: [["Evet, düzenli ağrım var", "klinik"], ["Hayır ya da ara sıra", null]] },
-  { q: "Derste en çok ne istersin?", a: [["Arkadaşımla birlikte gelmek", "double"], ["Grubun enerjisi ve motivasyonu", "grup"], ["Tamamen bana özel ilgi", "bireysel"]] }
+  { id: "goal", label: "Hedef", q: "Pilatesten en çok ne istiyorsun?", a: [["Güçlenmek ve sıkılaşmak", "strength"], ["Ağrılarımı azaltmak", "pain"], ["Duruşumu düzeltmek", "posture"], ["Esnemek ve rahatlamak", "mobility"], ["Hamilelik ya da doğum sonrası", "prenatal"]] },
+  { id: "health", label: "Durum", q: "Bilmemiz gereken bir durum var mı?", skip: ans => ans.goal === "prenatal", a: [["Bel fıtığı ya da bel ağrısı", "back"], ["Boyun, sırt ya da omuz ağrısı", "neck"], ["Yakın zamanda sakatlık ya da ameliyat", "injury"], ["Hayır, yok", "none"]] },
+  { id: "level", label: "Deneyim", q: "Daha önce pilates yaptın mı?", a: [["Hiç yapmadım", "new"], ["Birkaç kez denedim", "some"], ["Düzenli yapıyorum", "regular"]] },
+  { id: "company", label: "Ortam", q: "Derste nasıl bir ortam istersin?", a: [["Tamamen bana özel ilgi", "solo"], ["Arkadaşım ya da eşimle birlikte", "duo"], ["Küçük bir grubun enerjisi", "group"]] },
+  { id: "freq", label: "Sıklık", q: "Haftada kaç gün ayırabilirsin?", a: [["1 gün", "1"], ["2 gün", "2"], ["3 gün ya da daha fazla", "3"]] },
+  { id: "time", label: "Saat", q: "Hangi saatler sana uyar?", a: [["Sabah, 08–12", "morning"], ["Öğlen, 12–17", "noon"], ["Akşam, 17–22", "evening"]] }
 ];
-const quiz = { step: 0, result: null };
+const TIME_WINDOWS = { morning: [8, 12], noon: [12, 17], evening: [17, 22] };
+const PROGRAMS = {
+  prenatal: ["Hamile pilatesi", "Doktor onayıyla, dönemine uygun, pelvik taban ve nefes odaklı birebir program."],
+  back: ["Bel programı", "Bel fıtığı ve bel ağrısı için hareketlerin sana göre seçildiği, birebir ilerleyen dersler."],
+  neck: ["Boyun ve sırt programı", "Boyun, sırt ve omuz ağrısı için duruş ve omuz dengesi odaklı birebir dersler."],
+  injury: ["Güvenli dönüş programı", "Doktorunun onayıyla, sakatlık ya da ameliyat sonrası hareketi adım adım yeniden kuran birebir dersler."],
+  strength: ["Güç ve sıkılaşma", "Core ve tüm vücut kuvveti odaklı, tempolu ama kontrollü bir program."],
+  pain: ["Ağrısız hareket", "Omurga hareketliliği ve core desteğiyle gündelik ağrıları hafifletmeye odaklı bir program."],
+  posture: ["Duruş programı", "Sırt, omuz ve core dengesiyle daha dik ve rahat bir duruş için program."],
+  mobility: ["Esneklik ve nefes", "Nefesle akan, esneten ve gevşeten, günün stresini attıran bir program."]
+};
+const RHYTHM = {
+  1: "Haftada 1 ders. Alışkanlık için iyi bir başlangıç, fırsat buldukça 2'ye çıkarabilirsin.",
+  2: "Haftada 2 ders. Düzenli ilerlemek için en dengeli ritim.",
+  3: "Haftada 3 ders. Hızlı ilerlemek için; aralarda bir dinlenme günü iyi gelir."
+};
+const springOf = id => SPRINGS.find(s => s.id === id);
+
+function buildPlan(ans) {
+  const special = ans.goal === "prenatal" ? "prenatal" : ans.health !== "none" ? ans.health : null;
+  const [title, text] = PROGRAMS[special || ans.goal];
+  const format = special ? "Bireysel" : { solo: "Bireysel", duo: "Double", group: "Grup" }[ans.company];
+  const springs = special || ans.level === "new" ? ["yellow"] : ans.level === "some" ? ["blue", "green"] : ["red", "blue"];
+  const bring = ["Rahat bir kıyafet", "kaymaz çorap"];
+  if (special === "prenatal" || special === "injury") bring.push("doktor onayın");
+  else if (special) bring.push("varsa MR ya da raporların");
+  let note = "";
+  if (special && ans.company !== "solo") note = `Durumun için ilk dersleri birebir öneriyoruz. Sonra istersen ${ans.company === "duo" ? "double" : "grup"} derslere geçebilirsin.`;
+  else if (format === "Grup" && ans.level === "new") note = "Hiç denemediysen tek bir bireysel dersle başlamak, grupta daha rahat etmeni sağlar.";
+  return { title, text, format, rhythm: RHYTHM[ans.freq], springs, bring: bring.join(", "), note, window: TIME_WINDOWS[ans.time] };
+}
+
+const quiz = { answers: {} };
+const activeQuestions = () => QUESTIONS.filter(q => !q.skip?.(quiz.answers));
+const nextIndex = qs => qs.findIndex(q => !(q.id in quiz.answers));
+const answerLabel = q => q.a.find(([, v]) => v === quiz.answers[q.id])[0];
+const planMessage = p => [
+  `Merhaba, sitenizdeki testi doldurdum. Önerilen: ${p.title} (${p.format}).`,
+  ...activeQuestions().map(q => `${q.label}: ${answerLabel(q)}`),
+  "Bilgi almak istiyorum."
+].join("\n");
+
+function renderPlan(el, bar) {
+  const p = buildPlan(quiz.answers);
+  const coils = p.springs.map(id => `<svg viewBox="0 0 34 14" style="--c:${springOf(id).color}" aria-hidden="true"><path d="${COIL_PATH}"/></svg>`).join("");
+  const k = p.springs.reduce((a, id) => a + springOf(id).k, 0);
+  const names = p.springs.map(id => springOf(id).name.toLocaleLowerCase("tr")).join(" + ");
+  el.innerHTML = `${bar}<div class="result">
+    <h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>
+    <dl class="plan">
+      <div><dt>Format</dt><dd>${esc(p.format)}</dd></div>
+      <div><dt>Ritim</dt><dd>${esc(p.rhythm)}</dd></div>
+      <div><dt>Başlangıç yayı</dt><dd><span class="coils">${coils}</span>${levelName(k)}, ${names}</dd></div>
+      <div><dt>Yanına al</dt><dd>${esc(p.bring)}</dd></div>
+    </dl>
+    ${p.note ? `<p>${esc(p.note)}</p>` : ""}
+    <p class="step">Kesin programı ve yay ayarını ilk derste eğitmenin belirler.</p>
+    <div class="row">
+      <button class="btn btn-light" type="button" data-use>Bu planla saat seç</button>
+      <a class="btn btn-line" href="${waLink(planMessage(p))}" target="_blank" rel="noopener">Planı WhatsApp'tan paylaş</a>
+    </div>
+    <button class="linkish" type="button" data-restart>Testi baştan al</button></div>`;
+}
+
 function renderQuiz() {
   const el = $("#quiz");
-  const bar = `<div class="progress">${QUESTIONS.map((_, i) => `<i class="${quiz.result || i <= quiz.step ? "on" : ""}"></i>`).join("")}</div>`;
-  if (quiz.result) {
-    const r = RESULTS[quiz.result];
-    el.innerHTML = `${bar}<div class="result">
-      <h3>${esc(r.title)}</h3><p>${esc(r.text)}</p>
-      <a class="btn btn-light" href="${waLink(`Merhaba, sitenizdeki testte bana ${r.title} önerildi. Bilgi almak istiyorum.`)}" target="_blank" rel="noopener">Sonucu WhatsApp'tan gönder</a>
-      <button class="linkish" type="button" data-use="${r.format}">Bu formatla saat seç</button>
-      <button class="linkish" type="button" data-restart>Testi baştan al</button></div>`;
-    return;
-  }
-  const Q = QUESTIONS[quiz.step];
-  el.innerHTML = `${bar}<p class="step">${quiz.step + 1} / ${QUESTIONS.length}</p><h3>${esc(Q.q)}</h3>
-    <div class="options">${Q.a.map(([label], i) => `<button class="opt" type="button" data-i="${i}">${esc(label)}</button>`).join("")}</div>`;
+  const qs = activeQuestions(), idx = nextIndex(qs);
+  const bar = `<div class="progress">${qs.map((_, i) => `<i class="${idx === -1 || i <= idx ? "on" : ""}"></i>`).join("")}</div>`;
+  if (idx === -1) return renderPlan(el, bar);
+  const Q = qs[idx];
+  el.innerHTML = `${bar}<div class="quiz-foot"><p class="step">${idx + 1} / ${qs.length}</p>${idx ? `<button class="linkish" type="button" data-back>← Geri</button>` : ""}</div>
+    <h3>${esc(Q.q)}</h3>
+    <div class="options">${Q.a.map(([label, val]) => `<button class="opt" type="button" data-q="${Q.id}" data-v="${val}">${esc(label)}</button>`).join("")}</div>`;
 }
 $("#quiz").addEventListener("click", e => {
   const opt = e.target.closest(".opt");
-  if (opt) { const val = QUESTIONS[quiz.step].a[Number(opt.dataset.i)][1]; if (val) quiz.result = val; else quiz.step += 1; return renderQuiz(); }
-  const use = e.target.closest("[data-use]");
-  if (use) { booking.set({ format: use.dataset.use }); $("#booking").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
-  if (e.target.closest("[data-restart]")) { quiz.step = 0; quiz.result = null; renderQuiz(); }
+  if (opt) { quiz.answers[opt.dataset.q] = opt.dataset.v; return renderQuiz(); }
+  if (e.target.closest("[data-back]")) {
+    const qs = activeQuestions();
+    delete quiz.answers[qs[nextIndex(qs) - 1].id];
+    return renderQuiz();
+  }
+  if (e.target.closest("[data-use]")) {
+    const p = buildPlan(quiz.answers);
+    booking.pick(p.format, p.title, p.window);
+    $("#booking").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (e.target.closest("[data-restart]")) { quiz.answers = {}; renderQuiz(); }
 });
 
 /* ================= YORUMLAR ================= */
@@ -162,6 +249,7 @@ function initReviews() {
 }
 
 bindBasics();
+initMenu();
 initTeam();
 booking.render();
 renderQuiz();

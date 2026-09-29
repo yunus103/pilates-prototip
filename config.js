@@ -11,9 +11,9 @@ const STUDIO = {
   formats: ["Grup", "Bireysel", "Double"],
   // Members without a photo are not rendered; the section hides itself when none have one.
   team: [
-    { name: "Sevda Ulusinan", role: "Kurucu, pilates eğitmeni ve hareket uzmanı", photo: "" },
-    { name: "Hayrunisa Erdoğan", role: "Pilates eğitmeni ve hareket uzmanı", photo: "" },
-    { name: "Elif Demirata", role: "Pilates eğitmeni ve hareket uzmanı", photo: "" }
+    { name: "Sevda Ulusinan", role: "Kurucu, pilates eğitmeni ve hareket uzmanı", photo: "assets/team/sevda.jpg" },
+    { name: "Hayrunisa Erdoğan", role: "Pilates eğitmeni ve hareket uzmanı", photo: "assets/team/nisa.jpg" },
+    { name: "Elif Demirata", role: "Pilates eğitmeni ve hareket uzmanı", photo: "assets/team/elif.jpg" }
   ],
   reviews: [
     { who: "Sena", text: "Şu an 20 dersi tamamladım ve kendimde gözle görülür bir fark hissediyorum." },

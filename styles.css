@@ -53,6 +53,32 @@ h1, h2, h3 { margin: 0; font-family: var(--f-display); font-weight: 400; line-he
 .nav nav a { text-decoration: none; padding: 8px 16px; border-radius: 999px; font-size: .92rem; font-weight: 500; }
 .nav nav a:hover { background: var(--nude); }
 .nav nav a.cta { background: var(--espresso); color: var(--cream); }
+.brand { transition: color .3s ease; }
+
+/* MOBILE MENU: full-screen espresso sheet under the nav; the burger turns into a close button. */
+.menu-btn { display: none; position: relative; width: 48px; height: 48px; border: 0; border-radius: 50%; background: rgba(251, 246, 241, .8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); cursor: pointer; pointer-events: auto; transition: background-color .3s ease; }
+.menu-btn i { position: absolute; left: 14px; right: 14px; height: 2px; border-radius: 1px; background: var(--espresso); transition: transform .35s var(--ease), background-color .3s ease; }
+.menu-btn i:first-child { top: 19px; }
+.menu-btn i:last-child { top: 27px; }
+.menu-open { overflow: hidden; }
+.menu-open .brand { color: var(--cream); }
+.menu-open .menu-btn { background: rgba(251, 246, 241, .12); }
+.menu-open .menu-btn i { background: var(--cream); }
+.menu-open .menu-btn i:first-child { transform: translateY(4px) rotate(45deg); }
+.menu-open .menu-btn i:last-child { transform: translateY(-4px) rotate(-45deg); }
+.menu { position: fixed; inset: 0; z-index: 29; display: grid; align-content: space-between; gap: 32px; padding: calc(112px + env(safe-area-inset-top, 0px)) var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px)); background: var(--espresso); color: var(--cream); overflow-y: auto; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; }
+.menu-open .menu { opacity: 1; visibility: visible; transition: opacity .35s ease; }
+.menu-links { display: grid; gap: 2px; }
+.menu-links a { justify-self: start; font-family: var(--f-display); font-size: clamp(2.2rem, 10vw, 3.2rem); line-height: 1.2; text-decoration: none; opacity: 0; transform: translateY(16px); transition: opacity .4s ease, transform .6s var(--ease); }
+.menu-open .menu-links a { opacity: 1; transform: none; }
+.menu-open .menu-links a:nth-child(2) { transition-delay: .04s; }
+.menu-open .menu-links a:nth-child(3) { transition-delay: .08s; }
+.menu-open .menu-links a:nth-child(4) { transition-delay: .12s; }
+.menu-open .menu-links a:nth-child(5) { transition-delay: .16s; }
+.menu-open .menu-links a:nth-child(6) { transition-delay: .2s; }
+.menu-foot { display: grid; gap: 18px; }
+.menu-foot p { color: rgba(251, 246, 241, .7); font-size: .95rem; max-width: 36ch; }
+.menu-foot .btn { flex: 1; }
 
 /* 3D SCENE */
 .scene { position: relative; height: 260vh; background: radial-gradient(90% 70% at 60% 55%, var(--nude-2), var(--nude) 70%); }
@@ -91,7 +117,9 @@ h1, h2, h3 { margin: 0; font-family: var(--f-display); font-weight: 400; line-he
 /* STUDIO PHOTO */
 .photo { position: relative; height: min(92vh, 860px); overflow: hidden; }
 .photo img { position: absolute; inset: -8% 0; width: 100%; height: 116%; object-fit: cover; transform: translateY(var(--py, 0)); }
-.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(51, 33, 28, .82), rgba(51, 33, 28, 0) 55%); }
+/* Bright studio photos need both: a tall bottom fade for the caption and a left fade behind the headline. */
+.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(51, 33, 28, .88), rgba(51, 33, 28, .55) 38%, rgba(51, 33, 28, 0) 72%), linear-gradient(to right, rgba(51, 33, 28, .45), rgba(51, 33, 28, 0) 60%); }
+.photo h2, .photo p { text-shadow: 0 1px 24px rgba(51, 33, 28, .35); }
 .photo .wrap { position: absolute; left: 0; right: 0; bottom: clamp(36px, 7vh, 72px); z-index: 1; color: var(--cream); display: flex; justify-content: space-between; align-items: end; gap: 28px; flex-wrap: wrap; }
 .photo h2 { font-size: clamp(2.4rem, 5.6vw, 4.6rem); max-width: 15ch; }
 .photo p { max-width: 36ch; font-size: 1.1rem; opacity: .9; }
@@ -102,16 +130,14 @@ h1, h2, h3 { margin: 0; font-family: var(--f-display); font-weight: 400; line-he
 .title h2 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 18ch; }
 .title p { color: var(--muted); font-size: 1.1rem; max-width: 46ch; }
 
-/* TEAM: portrait cards; on phones they stack on top of each other while scrolling. */
+/* TEAM: round portrait ringed in the instructor's spring colour; on phones the cards stack while scrolling. */
 .team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.member { position: relative; margin: 0; aspect-ratio: 4 / 5; border-radius: 34px; overflow: hidden; background: var(--nude); color: var(--cream); }
-.member img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.member::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(51, 33, 28, .78), rgba(51, 33, 28, 0) 50%); }
-.member figcaption { position: absolute; z-index: 1; left: clamp(20px, 2.4vw, 28px); right: clamp(20px, 2.4vw, 28px); bottom: clamp(20px, 2.4vw, 26px); display: grid; gap: 6px; }
-.member svg { width: 40px; height: 16px; }
-.member svg path { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; }
-.member h3 { font-size: clamp(1.7rem, 2.6vw, 2.2rem); }
-.member span { font-size: .95rem; opacity: .85; }
+.member { margin: 0; padding: clamp(28px, 3.4vw, 44px) 24px clamp(26px, 3vw, 36px); border-radius: 34px; background: var(--nude); display: grid; justify-items: center; gap: 22px; text-align: center; }
+.member .ph { width: min(78%, 260px); aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 7px var(--nude), 0 0 0 9.5px var(--c); }
+.member img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); }   /* pushes the source posters' ring edge out of the mask */
+.member figcaption { display: grid; gap: 6px; }
+.member h3 { font-size: clamp(1.6rem, 2.4vw, 2rem); }
+.member span { font-size: .95rem; color: var(--muted); }
 
 /* FIND + BOOK */
 .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
@@ -127,8 +153,18 @@ h1, h2, h3 { margin: 0; font-family: var(--f-display); font-weight: 400; line-he
 .opt:hover { background: var(--nude); color: var(--espresso); border-color: var(--nude); transform: translateX(4px); }
 .result { display: grid; gap: 18px; }
 .result h3 { color: var(--nude); font-size: clamp(2.2rem, 4vw, 3rem); }
-.result p { opacity: .85; }
+.result > p { opacity: .85; }
+.plan { display: grid; margin: 0; border-top: 1px solid rgba(251, 246, 241, .14); }
+.plan div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(251, 246, 241, .14); }
+.plan dt { color: rgba(251, 246, 241, .6); font-size: .92rem; }
+.plan dd { margin: 0; }
+.coils { display: inline-flex; gap: 4px; margin-right: 8px; vertical-align: -1px; }
+.coils svg { width: 26px; height: 11px; }
+.coils path { fill: none; stroke: var(--c); stroke-width: 2.6; stroke-linecap: round; }
+.quiz .btn-line { color: var(--cream); }
+.quiz-foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .linkish { background: none; border: 0; padding: 0; min-height: 32px; color: var(--cream); text-decoration: underline; cursor: pointer; opacity: .75; justify-self: start; }
+.linkish:hover { opacity: 1; }
 .book { background: var(--nude); }
 .field { display: grid; gap: 10px; }
 .field > b { font-weight: 600; font-size: .95rem; }
@@ -185,28 +221,37 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 12px; fl
 .mbar { display: none; }
 
 @media (max-width: 900px) {
-  .nav nav a:not(.cta) { display: none; }
+  .nav nav { display: none; }
+  .menu-btn { display: block; }
   .beat { top: 92px; gap: 16px; }
   .beat h1 { font-size: clamp(2.3rem, 9.4vw, 3.6rem); }
   .beat h2 { font-size: clamp(2rem, 8vw, 3.2rem); }
   .beat p { font-size: 1rem; }
-  /* Phones: the spring panel only shows on the springs beat so it never covers the headline or the reformer. */
-  .panel { left: 12px; right: 12px; width: auto; bottom: 88px; padding: 14px; opacity: 0; transform: translateY(14px); pointer-events: none; }
-  .stage[data-beat="1"] .panel { opacity: 1; transform: none; pointer-events: auto; }
-  .hint { bottom: 100px; }
+  /* Phones: compact spring panel above the bottom bar; reformer.js centres the model between it and the text.
+     It steps aside on the last beat, whose CTA needs the room. */
+  .panel { left: 12px; right: 12px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); padding: 10px 12px 12px; gap: 8px; border-radius: 20px; }
+  .panel-top b { font-size: 1.1rem; }
+  .meter { height: 3px; }
+  .spring { min-height: 44px; padding: 5px 2px; gap: 2px; font-size: .7rem; border-radius: 12px; }
+  .spring svg { width: 28px; height: 11px; }
+  .stage[data-beat="2"] .panel { opacity: 0; transform: translateY(14px); pointer-events: none; }
+  .hint { bottom: var(--dock, 200px); }
   .stage:not([data-beat="0"]) .hint { opacity: 0; }
   .team-grid { grid-template-columns: 1fr; gap: 0; }
-  .member { position: sticky; top: calc(96px + var(--i) * 14px); margin-bottom: 20px; aspect-ratio: 4 / 4.6; box-shadow: 0 -18px 40px -28px rgba(51, 33, 28, .5); }
+  .member { position: sticky; top: calc(96px + var(--i) * 14px); margin-bottom: 20px; box-shadow: 0 -18px 40px -28px rgba(51, 33, 28, .5); }
   .duo, .contact .wrap { grid-template-columns: 1fr; }
   .card { min-height: 0; }
   .mbar { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: rgba(251, 246, 241, .94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
   .mbar .btn { min-height: 48px; padding: 0 12px; }
   body { padding-bottom: 76px; }
+  .menu-open .mbar { display: none; }
+}
+@media (min-width: 901px) {
+  .menu { display: none; }
 }
 @media (max-width: 560px) {
-  .beat .btn-line { display: none; }
   .springs { gap: 6px; }
-  .spring { font-size: .72rem; padding: 8px 2px; }
+  .plan div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
